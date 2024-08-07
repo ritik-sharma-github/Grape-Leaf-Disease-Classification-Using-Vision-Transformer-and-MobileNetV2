@@ -35,6 +35,10 @@ Preprocessing ensures that the data is in a suitable format for training the mod
 
 - **Augmentation:** Techniques such as rotation, flipping, and cropping are used to artificially increase the diversity of the training set. This helps the model generalize better by exposing it to a wider variety of image conditions.
 
+- ![Screenshot 2024-08-07 231431](https://github.com/user-attachments/assets/521a80ea-f6f3-4095-b7b4-4844f2e3cf3c)
+
+![Screenshot 2024-08-07 231452](https://github.com/user-attachments/assets/c413167d-a108-40cd-860b-c448f5d4d294)
+
 ## **Model Setup**
 
 The model setup involves configuring the architecture and components used for training.
@@ -99,9 +103,16 @@ Evaluating the model’s performance on the test set provides an understanding o
 
 - **Cross-Validation:** If applicable, k-fold cross-validation ensures that the model’s performance is robust and not overly dependent on a single data subset.
 
+- ![Screenshot 2024-08-07 231713](https://github.com/user-attachments/assets/8ca44801-aea3-48bb-8e52-d85d3d040640)
+
+
 ## **Predictions and Results Analysis**
 
 This section involves analyzing the results and understanding the model’s performance.
+
+![download (3)](https://github.com/user-attachments/assets/f1aa8e6b-e7ef-4950-9636-b32a20da475f)
+
+![download (4)](https://github.com/user-attachments/assets/33cbc867-7c35-49aa-8faf-57d03eb7affb)
 
 ### **Analysis Includes:**
 
@@ -112,3 +123,10 @@ This section involves analyzing the results and understanding the model’s perf
 - **Error Analysis:** Examination of misclassified images to identify common patterns or areas for improvement.
 
 - **Performance Comparison:** Comparing the hybrid model’s performance with that of individual ViT and MobileNetV2 models to highlight the benefits of combining the two approaches.
+![download (5)](https://github.com/user-attachments/assets/7ba9a947-6eac-4fb0-b37b-6947499e37d0)
+
+AUC scores:
+Class 1: 0.9998051821546854
+Class 2: 0.9998239940157966
+Class 3: 1.0
+Class 4: 1.0
