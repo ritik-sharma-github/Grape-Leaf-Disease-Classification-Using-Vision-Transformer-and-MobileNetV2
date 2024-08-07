@@ -1,7 +1,3 @@
-Certainly! Here’s a more detailed explanation for each section of the GitHub repository documentation:
-
----
-
 ## **Project Overview**
 
 The objective of this project is to create a deep learning model capable of accurately classifying grape leaf diseases. This is achieved by employing a hybrid model that combines Vision Transformer (ViT) and MobileNetV2 architectures. The dataset used consists of high-resolution images of grape leaves, labeled according to disease type or healthy status. By integrating the capabilities of both ViT and MobileNetV2, the project aims to enhance the model's ability to detect and classify different grape leaf diseases more accurately than traditional methods.
