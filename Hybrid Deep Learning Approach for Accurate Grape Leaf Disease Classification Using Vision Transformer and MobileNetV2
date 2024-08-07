@@ -1,122 +1,480 @@
-Certainly! Here’s a more detailed explanation for each section of the GitHub repository documentation:
+!pip install Keras
+!pip install vit-keras
+!pip install tensorflow-addons
+!pip install opendatasets
+import opendatasets as od
+import pandas
 
----
+import os
 
-## **Project Overview**
+import keras.preprocessing
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
 
-The objective of this project is to create a deep learning model capable of accurately classifying grape leaf diseases. This is achieved by employing a hybrid model that combines Vision Transformer (ViT) and MobileNetV2 architectures. The dataset used consists of high-resolution images of grape leaves, labeled according to disease type or healthy status. By integrating the capabilities of both ViT and MobileNetV2, the project aims to enhance the model's ability to detect and classify different grape leaf diseases more accurately than traditional methods.
+from keras.preprocessing import image
+from keras.preprocessing.image import ImageDataGenerator
+from sklearn.metrics import classification_report, confusion_matrix, roc_curve, auc
+from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
+from keras import layers
+from keras import regularizers, activations
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+from keras.callbacks import ModelCheckpoint
+from keras.layers import Dense, Dropout, Flatten, Activation, Concatenate, Lambda
+from keras.layers import Input, Conv2D, MaxPooling2D, GlobalAveragePooling2D, BatchNormalization, ZeroPadding2D
+from keras.models import Model
+from keras.optimizers import Adam
+from keras.applications import ResNet50V2
+from keras.preprocessing.image import ImageDataGenerator
+from vit_keras import vit, utils
 
-## **Introduction**
+from google.colab import drive
 
-Grapevine diseases can significantly affect the quality and quantity of grape production, making early detection crucial for effective management. Manual inspection methods for disease detection are often labor-intensive and error-prone. To address this challenge, this project leverages modern deep learning techniques to automate the classification of grape leaf diseases. By combining Vision Transformer (ViT) and MobileNetV2, the project seeks to develop a robust and efficient model that can quickly and accurately identify diseases from leaf images.
+# Mount Google Drive
+drive.mount('/content/drive')
 
-## **Data Collection and Preparation**
+!unzip "/content/drive/MyDrive/data of leaf diseases.zip"
 
-This section describes how the data was gathered and prepared for model training and evaluation.
+import os
+import shutil
 
-### **Key Steps:**
+# Define the source and destination directories
+source_dir = "/content/Plant_leave_diseases_dataset_with_augmentation"
+destination_dir = "/content/grape"
 
-- **Sourcing the Data:** Images were collected from various agricultural research databases and online repositories. These sources provide a diverse range of images that represent different types of grape leaf diseases.
-  
-- **Dataset Composition:** The dataset includes thousands of images, each labeled according to the disease type (Leaf Blight, Esca, Black Rot) or healthy status. This ensures a comprehensive coverage of possible conditions that the model needs to identify.
+# Create the destination directory if it doesn't exist
+os.makedirs(destination_dir, exist_ok=True)
 
-- **Data Splitting:** To ensure the model is trained effectively and evaluated fairly, the dataset was split into three subsets:
-  - **Training Set (70%):** Used to train the model, allowing it to learn and adjust its parameters based on the data.
-  - **Validation Set (15%):** Used to tune the model’s hyperparameters and assess its performance during training.
-  - **Test Set (15%):** Used for the final evaluation of the model’s performance to verify its ability to generalize to new, unseen data.
+# Iterate through the files in the source directory
+for filename in os.listdir(source_dir):
+    # Check if the filename contains "Tomato"
+    if "Grape" in filename:
+        # Construct the full path for the source and destination files
+        source_path = os.path.join(source_dir, filename)
+        destination_path = os.path.join(destination_dir, filename)
 
-## **Data Preprocessing**
+        # Move the file
+        shutil.move(source_path, destination_path)
 
-Preprocessing ensures that the data is in a suitable format for training the model and improves overall model performance.
+base_dir = '/content/grape'
 
-### **Steps Include:**
 
-- **Image Resizing:** All images are resized to a consistent dimension to ensure they can be processed by the model without issues related to varying image sizes.
 
-- **Color Inversion:** For images where the background color is similar to the leaf color, color inversion is applied to enhance contrast and make features more distinguishable.
+import os
+from collections import defaultdict
 
-- **Normalization:** Pixel values are scaled to a range of [0, 1] to standardize the input data and improve the model’s training stability.
+def count_images_in_folders(root_folder):
+    image_count_per_folder = defaultdict(int)
 
-- **Augmentation:** Techniques such as rotation, flipping, and cropping are used to artificially increase the diversity of the training set. This helps the model generalize better by exposing it to a wider variety of image conditions.
+    for folder_name in os.listdir(root_folder):
+        folder_path = os.path.join(root_folder, folder_name)
 
-## **Model Setup**
+        if os.path.isdir(folder_path):
+            image_count = sum(1 for file in os.listdir(folder_path) if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')))
+            image_count_per_folder[folder_name] = image_count
 
-The model setup involves configuring the architecture and components used for training.
+    return image_count_per_folder
 
-### **Components:**
+# Specify the root folder where your image folders are located
+root_folder_path = base_dir
 
-- **Vision Transformer (ViT):** This architecture processes images to capture global features and long-range dependencies. ViT is used here to handle the broader context of the images, capturing high-level patterns and relationships.
+image_counts = count_images_in_folders(root_folder_path)
 
-- **MobileNetV2:** This architecture focuses on local feature extraction, capturing detailed and fine-grained information from the images. MobileNetV2’s efficiency makes it suitable for this task.
+# Print the results
+for folder_name, count in image_counts.items():
+    print(f"{folder_name}: {count} images")
 
-- **Feature Fusion:** The features extracted from both ViT and MobileNetV2 are combined to create a unified feature vector. This fusion allows the model to leverage both global and local information for more accurate classification.
 
-- **Classification Layer:** A dense layer with softmax activation is used to convert the combined feature vector into class probabilities. This layer predicts the likelihood of each class (disease or healthy) for the input image.
 
-## **Model Construction**
+import os
 
-This section covers the actual building of the model, integrating ViT and MobileNetV2.
+def get_folder_names(directory_path):
+    # Initialize an empty list to store folder names
+    folder_names = []
 
-### **Key Steps:**
+    # Iterate over items in the specified directory
+    for item in os.listdir(directory_path):
+        item_path = os.path.join(directory_path, item)
 
-- **Feature Extraction:** ViT and MobileNetV2 each extract different types of features from the input images. ViT captures global context, while MobileNetV2 focuses on local details.
+        # Check if the item is a directory
+        if os.path.isdir(item_path):
+          if item != '.ipynb_checkpoints':
+            folder_names.append(item)
 
-- **Feature Fusion:** Features from both models are concatenated to form a comprehensive representation of the input images. This fusion helps in capturing a wide range of information.
+    return folder_names
 
-- **Classification Layer:** The concatenated features are passed through a dense layer with a softmax activation function to output the predicted class probabilities.
+# Specify the directory path for which you want to fetch folder names
+directory_path = base_dir
 
-## **Model Compilation**
+# Call the function to get folder names in the specified directory
+folders = get_folder_names(directory_path)
 
-Compiling the model involves configuring it for training with the appropriate settings.
+# Print the list of folder names
+print("Folder Names:", folders)
 
-### **Settings:**
+len(folders)
 
-- **Optimizer:** The Adam optimizer is used for its effectiveness in training deep learning models. It adjusts learning rates dynamically to improve convergence.
+import os
+import cv2
 
-- **Loss Function:** Categorical Cross-Entropy is used to measure the difference between the predicted probabilities and the actual class labels. This is appropriate for multi-class classification tasks.
+def invert_colors(image_path):
+    # Read the image
+    image = cv2.imread(image_path)
 
-- **Metrics:** Accuracy, precision, recall, and F1 score are monitored to evaluate how well the model performs. These metrics provide insight into different aspects of the model’s performance.
+    # Invert the colors
+    inverted_image = ~image
 
-## **Model Training**
+    # Save the inverted image
+    cv2.imwrite(image_path, inverted_image)
 
-Training involves feeding data into the model and optimizing it.
+def process_directory(directory):
+    # Loop through the subdirectories
+    for subdir in os.listdir(directory):
+        subdir_path = os.path.join(directory, subdir)
 
-### **Steps:**
+        # Check if it is a directory
+        if os.path.isdir(subdir_path):
+            # Loop through the images in the subdirectory
+            for filename in os.listdir(subdir_path):
+                if filename.lower().endswith(('.jpg', '.jpeg', '.png','.JPG')):
+                    image_path = os.path.join(subdir_path, filename)
+                    invert_colors(image_path)
 
-- **Epochs and Batch Size:** The number of epochs (iterations over the entire dataset) and batch size (number of images processed at a time) are set to balance training efficiency and memory usage.
+# Specify the directory containing the subdirectories with images
+main_directory = "/content/grape"
 
-- **Learning Rate Schedule:** Adjustments to the learning rate during training help in achieving better convergence and avoiding overshooting.
+# Process the main directory
+process_directory(main_directory)
 
-- **Training Procedure:** The model is trained by feeding batches of training images, computing gradients, and updating weights through backpropagation. Validation performance is monitored to adjust hyperparameters and prevent overfitting.
+print("Color inversion complete.")
 
-## **Model Evaluation**
+train_dir = os.path.join(base_dir, 'train')
+os.makedirs(train_dir, exist_ok=True)
 
-Evaluating the model’s performance on the test set provides an understanding of how well it generalizes.
+val_dir = os.path.join(base_dir, 'val')
+os.makedirs(val_dir, exist_ok=True)
 
-### **Metrics:**
+test_dir = os.path.join(base_dir, 'test')
+os.makedirs(test_dir, exist_ok=True)
 
-- **Accuracy:** The percentage of correctly classified images in the test set.
+import shutil
 
-- **Confusion Matrix:** A detailed breakdown of true positives, false positives, true negatives, and false negatives for each class.
+# List of class folder names
+class_folders = folders
+# Split ratios (adjust these as needed)
+train_ratio = 0.8
+val_ratio = 0.1
+test_ratio = 0.1
 
-- **Precision, Recall, F1 Score:** These metrics are calculated for each class to assess the model’s performance in detecting specific diseases.
+for folder in class_folders:
+    source_folder = os.path.join(base_dir, folder)
+    train_dest = os.path.join(train_dir, folder)
+    val_dest = os.path.join(val_dir, folder)
+    test_dest = os.path.join(test_dir, folder)
 
-- **Cross-Validation:** If applicable, k-fold cross-validation ensures that the model’s performance is robust and not overly dependent on a single data subset.
+    os.makedirs(train_dest, exist_ok=True)
+    os.makedirs(val_dest, exist_ok=True)
+    os.makedirs(test_dest, exist_ok=True)
 
-## **Predictions and Results Analysis**
+    filenames = os.listdir(source_folder)
+    num_files = len(filenames)
 
-This section involves analyzing the results and understanding the model’s performance.
+    num_train = int(num_files * train_ratio)
+    num_val = int(num_files * val_ratio)
 
-### **Analysis Includes:**
+    train_files = filenames[:num_train]
+    val_files = filenames[num_train:num_train + num_val]
+    test_files = filenames[num_train + num_val:]
 
-- **Test Set Predictions:** Analysis of the model’s predictions on the test set to determine classification accuracy.
+    for file in train_files:
+        src_path = os.path.join(source_folder, file)
+        dest_path = os.path.join(train_dest, file)
+        shutil.copy(src_path, dest_path)
 
-- **Visualization:** Visualization of example predictions to qualitatively assess model performance.
+    for file in val_files:
+        src_path = os.path.join(source_folder, file)
+        dest_path = os.path.join(val_dest, file)
+        shutil.copy(src_path, dest_path)
 
-- **Error Analysis:** Examination of misclassified images to identify common patterns or areas for improvement.
+    for file in test_files:
+        src_path = os.path.join(source_folder, file)
+        dest_path = os.path.join(test_dest, file)
+        shutil.copy(src_path, dest_path)
 
-- **Performance Comparison:** Comparing the hybrid model’s performance with that of individual ViT and MobileNetV2 models to highlight the benefits of combining the two approaches.
+size = 224
 
----
+batch_size = 32
+target_size = (size,size)  # Adjust as needed
 
-Feel free to customize these sections further to match your project specifics or to add any additional details you think are important!
+train_datagen = ImageDataGenerator(
+    rescale=1./255
+    )
+
+train_generator = train_datagen.flow_from_directory(
+    train_dir,
+    target_size=target_size,
+    class_mode='categorical',
+    batch_size=batch_size)
+
+val_datagen = ImageDataGenerator(rescale=1./255)
+
+val_generator = val_datagen.flow_from_directory(
+    val_dir,
+    target_size=target_size,
+    class_mode='categorical',
+    batch_size=batch_size,
+    shuffle=False)
+
+test_datagen = ImageDataGenerator(rescale=1./255)
+
+test_generator = test_datagen.flow_from_directory(
+    test_dir,
+    target_size=target_size,
+    class_mode='categorical',
+    batch_size=batch_size,
+    shuffle=False)
+
+test_labels = np.array(test_generator.labels)
+
+# prompt: plot the images using train generator
+
+import matplotlib.pyplot as plt
+
+def plot_images(generator, num_images):
+  for i in range(num_images):
+    image, label = generator.next()
+    plt.imshow(image[0])
+    plt.title(f"Label: {label[0]}")
+    plt.show()
+
+plot_images(train_generator, 5)
+
+"""## Models
+
+## ViTBiT
+"""
+
+import tensorflow as tf
+from tensorflow.keras import layers
+from tensorflow.keras.layers import GlobalAveragePooling2D
+from vit_keras import vit
+from tensorflow.keras.applications import MobileNetV2
+
+def create_vit_mobilenet_model(input_shape, num_classes):
+    vit_backbone = vit.vit_b16(
+        image_size=input_shape[:2],
+        include_top=False,
+        pretrained=True,
+        pretrained_top=False,
+        classes=num_classes,
+        weights="imagenet21k",
+    )
+
+    mobilenet_backbone = MobileNetV2(
+        input_shape=input_shape,
+        include_top=False,
+        weights='imagenet',
+        classes=num_classes,
+    )
+
+    mobilenet_backbone.trainable = False
+    vit_backbone.trainable = False
+
+    input_layer = layers.Input(shape=input_shape)
+
+    # ViT Backbone
+    vit_features = vit_backbone(input_layer)
+
+    # MobileNetV2 Backbone
+    mobilenet_features = mobilenet_backbone(input_layer)
+    mobilenet_features = GlobalAveragePooling2D()(mobilenet_features)
+
+    # Concatenate Features
+    combined_features = layers.Concatenate()([vit_features, mobilenet_features])
+    x = layers.Flatten()(combined_features)
+    x = layers.BatchNormalization()(x)
+    # Dense layer with Batch Normalization
+    x = layers.Dense(128, activation='relu')(x)
+    x = layers.Dense(128, activation='relu')(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dense(128, activation='relu')(x)
+    x = layers.Dense(128, activation='relu')(x)
+
+    output_layer = layers.Dense(num_classes, activation='softmax')(x)
+
+    model = tf.keras.models.Model(inputs=input_layer, outputs=output_layer)
+
+    return model
+
+input_shape = (size, size, 3) #input image shape
+num_classes = 4  # Number of output classes
+
+
+model = create_vit_mobilenet_model(input_shape, num_classes)
+
+
+custom_optimizer = Adam(learning_rate=0.001)
+
+model.compile(
+    optimizer=custom_optimizer,
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+model.summary()
+
+# prompt: add early stopping and reduce lr also import libraries
+
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+
+# Define the callbacks
+early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights = True, verbose=1)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, min_lr=1e-15)
+
+progess = model.fit(
+    train_generator,
+    epochs=25,
+    validation_data=val_generator,
+    callbacks=[reduce_lr]
+)
+
+test_loss, test_accuracy = model.evaluate(test_generator)
+print(f"Test Loss: {test_loss:.4f}")
+print(f"Test Accuracy: {test_accuracy:.4f}")
+
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
+
+# Assuming you have already trained and compiled your model
+# train_ds is your training dataset
+
+# Make predictions using the trained model
+predictions = model.predict(test_generator)
+
+# Convert predicted probabilities to class labels
+predicted_labels = np.argmax(predictions, axis=1)
+
+# Get the actual labels from the dataset
+
+# Calculate the confusion matrix
+confusion_mtx = confusion_matrix(test_labels, predicted_labels)
+classes = class_folders
+
+
+import numpy as np
+from sklearn.metrics import precision_score, recall_score, f1_score
+
+classes = class_folders
+
+# Create a Seaborn heatmap for the confusion matrix
+plt.figure(figsize=(10, 10))
+sns.heatmap(confusion_mtx, annot=True, fmt='d', cmap='coolwarm',
+            xticklabels=classes, yticklabels=classes)  # Replace 'classes' with your class labels
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Confusion Matrix')
+plt.show()
+
+acc = progess.history['accuracy']
+val_acc = progess.history['val_accuracy']
+loss = progess.history['loss']
+val_loss = progess.history['val_loss']
+
+sum(acc)/len(acc)
+
+sum(val_acc)/len(val_acc)
+
+sum(loss)/len(loss)
+
+sum(val_loss)/len(val_loss)
+
+# prompt: print the precision recall and f1 score
+
+from sklearn.metrics import classification_report
+# Get the classification report
+report = classification_report(test_labels, predicted_labels)
+
+# Print the report
+print(report)
+
+from sklearn.metrics import precision_score, recall_score, f1_score
+
+# Assuming test_labels and predicted_labels are your actual and predicted labels
+precision = precision_score(test_labels, predicted_labels, average='weighted')
+recall = recall_score(test_labels, predicted_labels, average='weighted')
+f1 = f1_score(test_labels, predicted_labels, average='weighted')
+
+print("Precision:", precision)
+print("Recall:", recall)
+print("F1 Score:", f1)
+
+# prompt: plot curves
+
+# Plot the accuracy curves
+plt.figure(figsize=(8, 6))
+plt.plot(progess.history['accuracy'], label='Train Accuracy')
+plt.plot(progess.history['val_accuracy'], label='Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+# Plot the loss curves
+plt.figure(figsize=(8, 6))
+plt.plot(progess.history['loss'], label='Train Loss')
+plt.plot(progess.history['val_loss'], label='Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+# prompt: ROC Curve display for deep learning
+
+# Get predicted probabilities for each class
+predictions = model.predict(test_generator)
+
+# Get the actual labels
+test_labels = np.array(test_generator.labels)
+
+# Binarize the test labels
+test_labels_bin = keras.utils.to_categorical(test_labels)
+
+# Calculate ROC curves and AUC for each class
+fpr = {}
+tpr = {}
+auc_scores = {}
+
+n_classes = 4  # Adjust this to your number of classes
+
+for i in range(n_classes):
+    fpr[i], tpr[i], _ = roc_curve(test_labels_bin[:, i], predictions[:, i])
+    auc_scores[i] = auc(fpr[i], tpr[i])
+
+# Plot the ROC curves
+plt.figure()
+lw = 2
+colors = ['red', 'green', 'blue', 'orange']  # Adjust colors for each class
+
+for i, color in zip(range(n_classes), colors):
+    plt.plot(fpr[i], tpr[i], color=color, lw=lw,
+             label='ROC curve (area = %0.2f)' % auc_scores[i])
+
+plt.plot([0, 1], [0, 1], color='black', linestyle='--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic for Multi-class Classification')
+plt.legend(loc="lower right")
+plt.show()
+
+# Print AUC scores
+print('AUC scores:')
+for i, score in auc_scores.items():
+    print(f'Class {i+1}: {score}')
+
